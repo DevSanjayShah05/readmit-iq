@@ -17,13 +17,20 @@ dependencies = [
     "python-dotenv>=1.0",
     "loguru>=0.7",
     "psycopg[binary]>=3.1",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
 ]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "ruff>=0.3",
     "black>=24.0",
 ]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
