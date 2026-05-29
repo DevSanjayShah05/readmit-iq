@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "readmit-iq"
+version = "0.1.0"
+description = "Hospital readmission risk prediction with explainable ML and clinical RAG"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Dev Shah" }]
+
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.26",
+    "python-dotenv>=1.0",
+    "loguru>=0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.3",
+    "black>=24.0",
+]
