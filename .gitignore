@@ -37,3 +37,8 @@ logs/
 models/
 *.joblib
 *.pkl
+
+# ML artifacts
+models/
+*.joblib
+*.pkl
