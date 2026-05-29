@@ -29,6 +29,7 @@ class Settings:
     app_env: str
     log_level: str
     data_root: Path
+    database_url: str
 
 
 def get_settings() -> Settings:
@@ -43,6 +44,10 @@ def get_settings() -> Settings:
         app_env=os.getenv("APP_ENV", "development"),
         log_level=os.getenv("APP_LOG_LEVEL", "INFO"),
         data_root=Path(os.getenv("DATA_ROOT", "./data")),
+        database_url=os.getenv(
+            "DATABASE_URL",
+            "postgresql://readmit:readmit@localhost:5432/readmit",
+        ),
     )
     logger.debug(f"Loaded settings: env={settings.app_env} log={settings.log_level}")
     return settings

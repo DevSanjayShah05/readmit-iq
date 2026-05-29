@@ -16,8 +16,8 @@ dependencies = [
     "numpy>=1.26",
     "python-dotenv>=1.0",
     "loguru>=0.7",
+    "psycopg[binary]>=3.1",
 ]
-
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -26,3 +26,4 @@ dev = [
 ]
 [tool.setuptools.packages.find]
 where = ["src"]
+
