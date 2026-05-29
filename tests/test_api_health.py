@@ -1,20 +1,15 @@
 """
 Tests for the ReadmitIQ API health and root endpoints.
 
-We use httpx.AsyncClient with FastAPI's ASGI app wired in directly. This
-runs the request through the full FastAPI stack (routing, validation,
-serialization) but skips the real network layer — fast and deterministic.
-
-httpx requires the async client for ASGITransport. Tests are async functions
-and pytest runs them via the anyio plugin (auto-loaded by FastAPI's deps).
+Uses async httpx + asgi-lifespan so FastAPI's startup hooks run during tests.
 """
-
 from __future__ import annotations
 
 from datetime import datetime
 
 import httpx
 import pytest
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
 from readmit_iq.api.app import create_app
@@ -28,10 +23,16 @@ def app() -> FastAPI:
 
 @pytest.fixture
 async def client(app: FastAPI):
-    """An async httpx client wired to talk to the in-memory app."""
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    """Async httpx client with lifespan support."""
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
 
 
 @pytest.mark.anyio
@@ -76,12 +77,6 @@ async def test_openapi_schema_is_valid_json(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_unknown_route_returns_404(client: httpx.AsyncClient) -> None:
-    """A nonexistent route should return 404 — the framework handles this."""
+    """A nonexistent route should return 404."""
     response = await client.get("/this-does-not-exist")
     assert response.status_code == 404
-
-
-@pytest.fixture
-def anyio_backend() -> str:
-    """Tell anyio to use asyncio (not trio). Required by the anyio plugin."""
-    return "asyncio"
