@@ -1,0 +1,26 @@
+# Local development stack for ReadmitIQ.
+# Bring up with:  docker compose -f infra/docker/docker-compose.yml up -d
+# Bring down:     docker compose -f infra/docker/docker-compose.yml down
+# Status:         docker compose -f infra/docker/docker-compose.yml ps
+# Tail logs:      docker compose -f infra/docker/docker-compose.yml logs -f postgres
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: readmit-postgres
+    environment:
+      POSTGRES_USER: readmit
+      POSTGRES_PASSWORD: readmit
+      POSTGRES_DB: readmit
+    ports:
+      - "5432:5432"
+    volumes:
+      - readmit_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U readmit -d readmit"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  readmit_postgres_data:
