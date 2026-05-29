@@ -19,6 +19,7 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "sqlalchemy>=2.0",
     "alembic>=1.13",
+    "faker>=24.0",
 ]
 
 [project.optional-dependencies]
