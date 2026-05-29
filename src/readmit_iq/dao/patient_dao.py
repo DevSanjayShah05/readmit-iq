@@ -8,6 +8,7 @@ file should ever do `cursor.execute('SELECT ... FROM patient ...')`.
 This is the "anticorruption layer" between the application's Python world
 (Patient objects) and the database's relational world (rows and columns).
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -17,7 +18,6 @@ from loguru import logger
 
 from readmit_iq.models import Patient
 from readmit_iq.utils.db import get_connection
-
 
 # The full set of columns we read back, in a fixed order. Defined once at
 # module scope so insert / select / row-parsing all use the same shape.
@@ -127,6 +127,43 @@ class PatientDAO:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, (start, end))
+                rows = cur.fetchall()
+        return [_row_to_patient(r) for r in rows]
+
+    def find_by_diagnoses(
+        self,
+        diagnosis_codes: Sequence[str],
+        start: date | None = None,
+        end: date | None = None,
+    ) -> Sequence[Patient]:
+        """
+        Return patients whose primary_diagnosis is in the given list, optionally
+        filtered to a date range. Empty list returns no patients.
+        """
+        if not diagnosis_codes:
+            return []
+
+        # Build the WHERE clause dynamically based on which filters apply.
+        # Note we're parameterizing the values (never string-concatenating them
+        # into the SQL); only the *structure* of the query varies.
+        conditions = ["primary_diagnosis = ANY(%s)"]
+        params: list = [list(diagnosis_codes)]
+        if start is not None:
+            conditions.append("admission_date >= %s")
+            params.append(start)
+        if end is not None:
+            conditions.append("admission_date <= %s")
+            params.append(end)
+
+        sql = f"""
+            SELECT {', '.join(_COLUMNS)}
+            FROM patient
+            WHERE {' AND '.join(conditions)}
+            ORDER BY admission_date, id;
+        """
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, tuple(params))
                 rows = cur.fetchall()
         return [_row_to_patient(r) for r in rows]
 

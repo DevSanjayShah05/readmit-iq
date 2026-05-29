@@ -4,6 +4,7 @@ Database connection helpers.
 A single place to get a Postgres connection, so we don't repeat
 connection-string parsing or context-manager boilerplate everywhere.
 """
+
 from __future__ import annotations
 
 from contextlib import contextmanager

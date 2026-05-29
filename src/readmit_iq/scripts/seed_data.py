@@ -12,6 +12,7 @@ Usage:
     python -m readmit_iq.scripts.seed_data --count 1000
     python -m readmit_iq.scripts.seed_data --count 5000 --seed 42 --truncate
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,23 +26,22 @@ from readmit_iq.dao.patient_dao import PatientDAO
 from readmit_iq.models import Patient
 from readmit_iq.utils.db import get_connection
 
-
 # Realistic-ish diagnosis distribution and per-diagnosis readmission rate.
 # These numbers are loosely based on published readmission research; they're
 # not authoritative, but they create the kind of signal a model can learn.
 DIAGNOSES = [
     # (icd10_code, label, weight, readmit_rate)
-    ("I50.9", "Heart failure",        0.20, 0.25),
-    ("J44.9", "COPD",                  0.15, 0.22),
-    ("J18.9", "Pneumonia",             0.12, 0.17),
-    ("E11.9", "Type 2 diabetes",       0.10, 0.18),
-    ("N17.9", "Acute kidney injury",   0.08, 0.20),
-    ("I63.9", "Stroke",                0.07, 0.15),
-    ("I21.9", "Acute MI",              0.06, 0.13),
-    ("K92.2", "GI bleed",              0.05, 0.14),
-    ("A41.9", "Sepsis",                0.05, 0.21),
-    ("Z51.5", "Palliative encounter",  0.03, 0.05),
-    (None,    "Unspecified",           0.09, 0.10),  # null diagnosis
+    ("I50.9", "Heart failure", 0.20, 0.25),
+    ("J44.9", "COPD", 0.15, 0.22),
+    ("J18.9", "Pneumonia", 0.12, 0.17),
+    ("E11.9", "Type 2 diabetes", 0.10, 0.18),
+    ("N17.9", "Acute kidney injury", 0.08, 0.20),
+    ("I63.9", "Stroke", 0.07, 0.15),
+    ("I21.9", "Acute MI", 0.06, 0.13),
+    ("K92.2", "GI bleed", 0.05, 0.14),
+    ("A41.9", "Sepsis", 0.05, 0.21),
+    ("Z51.5", "Palliative encounter", 0.03, 0.05),
+    (None, "Unspecified", 0.09, 0.10),  # null diagnosis
 ]
 
 
@@ -126,7 +126,9 @@ def seed_patients(count: int, seed: int = 42, truncate: bool = False) -> int:
         if (i + 1) % 500 == 0:
             logger.info(f"  ... {i + 1:,} / {count:,} inserted")
 
-    logger.success(f"Seeded {inserted:,} patients (readmit rate: {_readmit_rate(dao):.1%})")
+    logger.success(
+        f"Seeded {inserted:,} patients (readmit rate: {_readmit_rate(dao):.1%})"
+    )
     return inserted
 
 
@@ -146,9 +148,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Seed the patient table with synthetic data for development."
     )
-    parser.add_argument("--count", type=int, default=1000, help="How many patients to insert (default 1000)")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
-    parser.add_argument("--truncate", action="store_true", help="Wipe the table before inserting")
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=1000,
+        help="How many patients to insert (default 1000)",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed for reproducibility"
+    )
+    parser.add_argument(
+        "--truncate", action="store_true", help="Wipe the table before inserting"
+    )
     args = parser.parse_args()
 
     seed_patients(count=args.count, seed=args.seed, truncate=args.truncate)

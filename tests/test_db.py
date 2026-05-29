@@ -5,6 +5,7 @@ These tests require a running Postgres at the URL in DATABASE_URL. If the
 database is unreachable, the test is skipped rather than failed — that's
 the right semantics for integration tests that depend on external services.
 """
+
 from __future__ import annotations
 
 import pytest

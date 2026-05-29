@@ -9,6 +9,7 @@ its fields cannot accidentally be mutated by code elsewhere. If you need a
 modified copy, use dataclasses.replace() — it returns a new object rather
 than mutating the original.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from datetime import date, datetime
 @dataclass(frozen=True, slots=True)
 class Patient:
     """One row of the `patient` table."""
+
     mrn: str
     age: int
     sex: str

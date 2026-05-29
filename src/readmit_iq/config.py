@@ -6,6 +6,7 @@ exposes them as typed Python objects. The rest of the project should
 import from here rather than calling os.getenv() ad-hoc, so we have a
 single place to see every config knob the project recognizes.
 """
+
 from __future__ import annotations
 
 import os
@@ -26,6 +27,7 @@ load_dotenv(_ENV_PATH)
 @dataclass(frozen=True)
 class Settings:
     """All project configuration in one place."""
+
     app_env: str
     log_level: str
     data_root: Path

@@ -5,6 +5,7 @@ These are integration tests — they exercise real SQL against a real
 Postgres. The `clean_patient_table` fixture resets the table between
 tests so they don't see each other's data.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -77,18 +78,39 @@ def test_find_admissions_between(clean_patient_table) -> None:
     """Range query should return only patients within the window, ordered."""
     dao = PatientDAO()
     # Three patients, one before the window, one inside, one after
-    dao.insert(Patient(mrn="BEFORE", age=60, sex="F",
-                       admission_date=date(2023, 12, 1),
-                       discharge_date=date(2023, 12, 5),
-                       primary_diagnosis=None, readmitted_30d=False))
-    dao.insert(Patient(mrn="INSIDE", age=70, sex="M",
-                       admission_date=date(2024, 1, 15),
-                       discharge_date=date(2024, 1, 22),
-                       primary_diagnosis=None, readmitted_30d=False))
-    dao.insert(Patient(mrn="AFTER", age=55, sex="F",
-                       admission_date=date(2024, 3, 1),
-                       discharge_date=date(2024, 3, 5),
-                       primary_diagnosis=None, readmitted_30d=False))
+    dao.insert(
+        Patient(
+            mrn="BEFORE",
+            age=60,
+            sex="F",
+            admission_date=date(2023, 12, 1),
+            discharge_date=date(2023, 12, 5),
+            primary_diagnosis=None,
+            readmitted_30d=False,
+        )
+    )
+    dao.insert(
+        Patient(
+            mrn="INSIDE",
+            age=70,
+            sex="M",
+            admission_date=date(2024, 1, 15),
+            discharge_date=date(2024, 1, 22),
+            primary_diagnosis=None,
+            readmitted_30d=False,
+        )
+    )
+    dao.insert(
+        Patient(
+            mrn="AFTER",
+            age=55,
+            sex="F",
+            admission_date=date(2024, 3, 1),
+            discharge_date=date(2024, 3, 5),
+            primary_diagnosis=None,
+            readmitted_30d=False,
+        )
+    )
     in_window = dao.find_admissions_between(date(2024, 1, 1), date(2024, 1, 31))
     assert len(in_window) == 1
     assert in_window[0].mrn == "INSIDE"
@@ -106,6 +128,7 @@ def test_delete_by_id(clean_patient_table) -> None:
 def test_unique_mrn_constraint(clean_patient_table) -> None:
     """Inserting two patients with the same mrn should fail at the DB level."""
     import psycopg
+
     dao = PatientDAO()
     dao.insert(_sample_patient(mrn="DUPLICATE"))
     with pytest.raises(psycopg.errors.UniqueViolation):

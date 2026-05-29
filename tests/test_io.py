@@ -1,6 +1,7 @@
 """
 Tests for readmit_iq.utils.io
 """
+
 from __future__ import annotations
 
 from pathlib import Path

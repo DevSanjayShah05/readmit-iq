@@ -5,6 +5,7 @@ The `clean_patient_table` fixture truncates the patient table before each
 test that uses it, so tests start from a known empty state. Truncate is
 fast and resets the SERIAL id counter — handy for predictable test ids.
 """
+
 from __future__ import annotations
 
 import pytest

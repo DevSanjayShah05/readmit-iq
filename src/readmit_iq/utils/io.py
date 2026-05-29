@@ -5,6 +5,7 @@ This module wraps the most common file operations with logging and
 useful error messages, so the rest of the project doesn't repeat the
 same boilerplate everywhere.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
