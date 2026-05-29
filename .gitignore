@@ -33,3 +33,7 @@ frontend/dist/
 # Logs
 *.log
 logs/
+# ML artifacts
+models/
+*.joblib
+*.pkl
