@@ -28,6 +28,9 @@ dependencies = [
     "pydantic>=2.5",
     "pyspark>=3.5,<4.0",
     "delta-spark>=3.2,<4.0",
+    "httpx>=0.27",
+    "qdrant-client>=1.9",
+    "sentence-transformers>=2.6",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +38,6 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.3",
     "black>=24.0",
-    "httpx>=0.27",
     "asgi-lifespan>=2.1",
 ]
 
