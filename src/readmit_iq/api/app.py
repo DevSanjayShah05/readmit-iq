@@ -26,16 +26,21 @@ from pydantic import BaseModel, Field
 
 from readmit_iq.api.schemas import (
     BatchExplanationResponse,
+    BatchExplanationWithCitationsResponse,
     BatchPredictionResponse,
     BatchPredictRequest,
     ExplanationResponse,
+    ExplanationWithCitationsResponse,
     FeatureContributionResponse,
     PredictionResponse,
+    RetrievedCitationResponse,
     probability_to_risk_band,
 )
 from readmit_iq.config import get_settings
 from readmit_iq.ml.explain import ShapExplainer
 from readmit_iq.ml.predict import ReadmissionPredictor
+from readmit_iq.rag.query_composer import compose_query
+from readmit_iq.rag.retriever import Retriever
 
 # Default model location. Can be overridden by the MODEL_PATH env var if needed
 # (for example, when running tests with a temp-trained model).
@@ -76,12 +81,21 @@ def _build_lifespan(model_path: Path):
             app.state.model_loaded = True
             logger.success("Model and SHAP explainer ready")
         except FileNotFoundError as exc:
-            # Don't crash the whole server — let /health report the failure
-            # so ops sees it, but other endpoints can still serve.
             logger.error(f"Model loading failed: {exc}")
             app.state.predictor = None
             app.state.explainer = None
             app.state.model_loaded = False
+
+        # Retriever uses Qdrant; failing gracefully so /predict and /explain
+        # still work even if the vector store is down.
+        try:
+            app.state.retriever = Retriever()
+            app.state.retriever_loaded = True
+            logger.success("RAG retriever ready")
+        except Exception as exc:
+            logger.error(f"Retriever loading failed: {exc}")
+            app.state.retriever = None
+            app.state.retriever_loaded = False
 
         yield  # the app runs here
 
@@ -219,6 +233,86 @@ def create_app(model_path: Path | None = None) -> FastAPI:
         ]
         logger.info(f"Explained {len(explanations)} predictions")
         return BatchExplanationResponse(explanations=explanations)
+
+    @app.post(
+        "/explain-with-citations",
+        response_model=BatchExplanationWithCitationsResponse,
+        tags=["predictions"],
+    )
+    def explain_with_citations(
+        request: Request, body: BatchPredictRequest
+    ) -> BatchExplanationWithCitationsResponse:
+        """
+        Predict, explain, and retrieve relevant biomedical literature
+        for each patient in one call.
+
+        For each patient:
+          1. Score with the trained model (probability + risk band)
+          2. Compute SHAP feature contributions
+          3. Compose a clinical query from age, diagnosis, length of stay
+          4. Retrieve top-3 relevant PubMed abstracts from the vector store
+
+        If the retriever is unavailable, citations are returned as empty
+        lists but predictions and explanations still work.
+        """
+        explainer = _require_explainer(request)
+        retriever = getattr(request.app.state, "retriever", None)
+
+        domain_patients = [p.to_domain() for p in body.patients]
+        explanations = explainer.explain(domain_patients)
+
+        results: list[ExplanationWithCitationsResponse] = []
+        for patient_req, explanation in zip(body.patients, explanations):
+            query = compose_query(
+                age=patient_req.age,
+                sex=patient_req.sex,
+                admission_date=patient_req.admission_date.isoformat(),
+                discharge_date=patient_req.discharge_date.isoformat(),
+                primary_diagnosis=patient_req.primary_diagnosis,
+            )
+            if retriever is not None:
+                retrieved = retriever.retrieve(query, top_k=3)
+                citations = [
+                    RetrievedCitationResponse(
+                        pmid=doc.pmid,
+                        title=doc.title,
+                        journal=doc.journal,
+                        year=doc.year,
+                        authors=doc.authors,
+                        score=doc.score,
+                        pubmed_url=doc.pubmed_url,
+                    )
+                    for doc in retrieved
+                ]
+            else:
+                citations = []
+
+            results.append(
+                ExplanationWithCitationsResponse(
+                    mrn=explanation.mrn,
+                    predicted_probability=explanation.predicted_probability,
+                    baseline_probability=explanation.baseline_probability,
+                    risk_band=probability_to_risk_band(
+                        explanation.predicted_probability
+                    ),
+                    contributions=[
+                        FeatureContributionResponse(
+                            feature_name=c.feature_name,
+                            feature_value=c.feature_value,
+                            shap_value=c.shap_value,
+                        )
+                        for c in explanation.contributions
+                    ],
+                    query=query,
+                    citations=citations,
+                )
+            )
+
+        logger.info(
+            f"Explained-with-citations: {len(results)} patients, "
+            f"retriever={'up' if retriever else 'down'}"
+        )
+        return BatchExplanationWithCitationsResponse(results=results)
 
     logger.info(f"FastAPI app initialized (env={settings.app_env})")
     return app

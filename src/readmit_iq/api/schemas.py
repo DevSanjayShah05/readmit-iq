@@ -100,6 +100,36 @@ class BatchExplanationResponse(BaseModel):
     explanations: list[ExplanationResponse]
 
 
+class RetrievedCitationResponse(BaseModel):
+    """One retrieved biomedical citation relevant to a patient's prediction."""
+
+    pmid: str
+    title: str
+    journal: str
+    year: str
+    authors: list[str]
+    score: float = Field(..., description="Cosine similarity score (0-1)")
+    pubmed_url: str
+
+
+class ExplanationWithCitationsResponse(BaseModel):
+    """SHAP explanation plus retrieved literature for one patient."""
+
+    mrn: str
+    predicted_probability: float
+    baseline_probability: float
+    risk_band: Literal["low", "medium", "high"]
+    contributions: list[FeatureContributionResponse]
+    query: str = Field(..., description="The composed query used for retrieval")
+    citations: list[RetrievedCitationResponse]
+
+
+class BatchExplanationWithCitationsResponse(BaseModel):
+    """Many explanations-with-citations in one call."""
+
+    results: list[ExplanationWithCitationsResponse]
+
+
 # ---------- Helper functions ----------
 
 
