@@ -2,6 +2,8 @@
 
 > Helping clinicians make faster decisions about hospital readmission risk — with explainable ML.
 
+[![tests](https://github.com/DevSanjayShah05/readmit-iq/actions/workflows/test.yml/badge.svg)](https://github.com/DevSanjayShah05/readmit-iq/actions/workflows/test.yml)
+
 ReadmitIQ is an end-to-end machine learning system that predicts a hospital patient's probability of being readmitted within 30 days of discharge, and explains *why* the model thinks so. It's not a black box: every prediction comes with per-feature contributions a clinician can audit.
 
 The project demonstrates a complete production architecture — data ingestion, model training, explainability, and a REST API — built on the same tools used in healthcare data engineering at scale.

@@ -1,0 +1,64 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: readmit
+          POSTGRES_PASSWORD: readmit_pw
+          POSTGRES_DB: readmit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U readmit"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://readmit:readmit_pw@localhost:5432/readmit
+      APP_ENV: test
+      LOG_LEVEL: WARNING
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Download Postgres JDBC driver
+        run: |
+          mkdir -p .venv/jars
+          curl -sL -o .venv/jars/postgresql-42.7.3.jar \
+            https://jdbc.postgresql.org/download/postgresql-42.7.3.jar
+
+      - name: Run Alembic migrations
+        run: alembic upgrade head
+
+      - name: Run pytest
+        run: pytest -v --tb=short
