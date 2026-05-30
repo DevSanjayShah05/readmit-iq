@@ -12,13 +12,14 @@ from pathlib import Path
 import pytest
 
 from readmit_iq.ingest.bronze import ingest_raw_csv, read_bronze
+from readmit_iq.ingest.gold import POSTGRES_JDBC_JAR
 from readmit_iq.ingest.spark_session import get_spark_session
 
 
 @pytest.fixture(scope="session")
 def spark():
     """One SparkSession for the whole test session."""
-    s = get_spark_session("readmit-iq-tests")
+    s = get_spark_session("readmit-iq-tests", extra_jars=[str(POSTGRES_JDBC_JAR)])
     yield s
     s.stop()
 

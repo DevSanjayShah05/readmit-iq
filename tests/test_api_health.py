@@ -3,6 +3,7 @@ Tests for the ReadmitIQ API health and root endpoints.
 
 Uses async httpx + asgi-lifespan so FastAPI's startup hooks run during tests.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

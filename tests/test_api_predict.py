@@ -9,6 +9,7 @@ Important: LifespanManager is required so FastAPI's startup event runs
 (which is where we load the model into app.state). Without it the
 predictor is None and every prediction endpoint returns 503.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -63,7 +64,9 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-def _sample_patient_body(mrn: str = "TEST-001", age: int = 78, dx: str = "I50.9") -> dict:
+def _sample_patient_body(
+    mrn: str = "TEST-001", age: int = 78, dx: str = "I50.9"
+) -> dict:
     """Build a request body with one patient."""
     return {
         "patients": [
@@ -109,13 +112,17 @@ async def test_predict_high_risk_patient_scores_higher_than_low(
     body = {
         "patients": [
             {
-                "mrn": "HIGH", "age": 85, "sex": "M",
+                "mrn": "HIGH",
+                "age": 85,
+                "sex": "M",
                 "admission_date": "2024-06-01",
                 "discharge_date": "2024-06-15",
                 "primary_diagnosis": "I50.9",
             },
             {
-                "mrn": "LOW", "age": 35, "sex": "F",
+                "mrn": "LOW",
+                "age": 35,
+                "sex": "F",
                 "admission_date": "2024-07-01",
                 "discharge_date": "2024-07-02",
                 "primary_diagnosis": "Z51.5",

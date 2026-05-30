@@ -4,6 +4,10 @@ Tests for the silver layer.
 We construct small synthetic DataFrames covering deduplication, validation,
 and filtering cases, then assert the silver transformations produce the
 right output.
+
+The Postgres JDBC JAR is included in the Spark session config so this
+session can be safely reused by gold tests (Spark re-uses sessions
+within a single Python process).
 """
 
 from __future__ import annotations
@@ -14,6 +18,7 @@ from pathlib import Path
 import pytest
 from pyspark.sql import SparkSession
 
+from readmit_iq.ingest.gold import POSTGRES_JDBC_JAR
 from readmit_iq.ingest.silver import (
     read_silver,
     run_silver,
@@ -25,7 +30,10 @@ from readmit_iq.ingest.spark_session import get_spark_session
 @pytest.fixture(scope="session")
 def spark() -> SparkSession:
     """One SparkSession for the whole test session."""
-    s = get_spark_session("readmit-iq-silver-tests")
+    s = get_spark_session(
+        "readmit-iq-silver-tests",
+        extra_jars=[str(POSTGRES_JDBC_JAR)],
+    )
     yield s
     s.stop()
 
@@ -39,7 +47,6 @@ def _make_bronze_df(spark: SparkSession, rows: list[dict]):
 
 
 def test_dedup_keeps_latest_ingested_at(spark: SparkSession) -> None:
-    """When the same MRN appears twice, the row with the latest ingested_at wins."""
     rows = [
         {
             "mrn": "DUP-001",
@@ -73,7 +80,6 @@ def test_dedup_keeps_latest_ingested_at(spark: SparkSession) -> None:
 
 
 def test_dedup_preserves_distinct_mrns(spark: SparkSession) -> None:
-    """Different MRNs shouldn't be deduplicated together."""
     rows = [
         {
             "mrn": "PATIENT-A",
@@ -107,7 +113,6 @@ def test_dedup_preserves_distinct_mrns(spark: SparkSession) -> None:
 
 
 def test_age_in_range_is_kept(spark: SparkSession) -> None:
-    """Valid ages should pass through unchanged."""
     rows = [
         {
             "mrn": "AGE-001",
@@ -126,7 +131,6 @@ def test_age_in_range_is_kept(spark: SparkSession) -> None:
 
 
 def test_age_out_of_range_becomes_null(spark: SparkSession) -> None:
-    """Negative or absurdly high ages should be nulled, not dropped."""
     rows = [
         {
             "mrn": "BAD-AGE-001",
@@ -161,7 +165,6 @@ def test_age_out_of_range_becomes_null(spark: SparkSession) -> None:
 
 
 def test_sex_lowercase_is_uppercased(spark: SparkSession) -> None:
-    """Sex 'm' should become 'M'."""
     rows = [
         {
             "mrn": "SEX-001",
@@ -180,7 +183,6 @@ def test_sex_lowercase_is_uppercased(spark: SparkSession) -> None:
 
 
 def test_sex_invalid_value_becomes_null(spark: SparkSession) -> None:
-    """Unrecognized sex values should be nulled."""
     rows = [
         {
             "mrn": "SEX-002",
@@ -202,7 +204,6 @@ def test_sex_invalid_value_becomes_null(spark: SparkSession) -> None:
 
 
 def test_null_mrn_row_is_dropped(spark: SparkSession) -> None:
-    """Rows without an MRN are fundamentally unusable; drop them."""
     rows = [
         {
             "mrn": None,
@@ -236,7 +237,6 @@ def test_null_mrn_row_is_dropped(spark: SparkSession) -> None:
 
 
 def test_run_silver_end_to_end(spark: SparkSession, tmp_path: Path) -> None:
-    """Full silver pipeline: bronze on disk -> silver on disk."""
     rows = [
         {
             "mrn": "E2E-001",
