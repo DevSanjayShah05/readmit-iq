@@ -26,6 +26,8 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
     "pydantic>=2.5",
+    "pyspark>=3.5,<4.0",
+    "delta-spark>=3.2,<4.0",
 ]
 
 [project.optional-dependencies]
